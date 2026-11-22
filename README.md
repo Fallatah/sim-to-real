@@ -1,8 +1,8 @@
 # World-model adaptation robustness study: code
 
 This code regenerates every number, table and figure in the paper
-"How Robust Is World-Model Adaptation? A Preregistered Simulation Study of Data Budget,
-Data Quality and Physics Mismatch" (registration: https://osf.io/9kz2j).
+"How Robust Is World-Model Adaptation? A Simulation Study of Data Budget,
+Data Quality and Physics Mismatch".
 
 Everything is simulated: there is no hardware and no external dataset.
 
