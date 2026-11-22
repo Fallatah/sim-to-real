@@ -7,7 +7,7 @@ from sklearn.metrics import roc_auc_score
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-warnings.filterwarnings('ignore', category=__import__('sklearn.exceptions', fromlist=['x']).ConvergenceWarning)  # diagnostics only; convergence is recorded in the main experiments
+from sklearn.exceptions import ConvergenceWarning
 import sim, models, faults
 from experiments import base, testset, data_seed, SIZES
 
@@ -81,13 +81,17 @@ Xc0, Yc0, _, _ = sim.transitions(Rc[..., :2], Rc[..., 2:], Tc)
 Mm = faults.missing_mask(Rc, Tc, 'MCAR', 0.1, np.random.default_rng(8))
 tgt = {}
 for strat in ['median', 'mice', 'interp', 'lagreg']:
-    Ri, _ = faults.impute(faults.apply_mask(Rc, Mm), Tc, strat, 0)
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter('always', ConvergenceWarning)
+        Ri, _ = faults.impute(faults.apply_mask(Rc, Mm), Tc, strat, 0)
+    n_nonconv = sum(issubclass(x.category, ConvergenceWarning) for x in w)
     Xi, Yi, bi_, ti_ = sim.transitions(Ri[0][..., :2], Ri[0][..., 2:], Tc)
     touched = (Mm[bi_, ti_] | Mm[bi_, ti_ + 1]).any(1)
     err = np.abs((Yi - Yc0) / B.sc.ysd)
     tgt[strat] = dict(frac_touched=float(touched.mean()),
                       target_err_touched=float(np.median(err[touched].max(1))),
-                      share_sq_err_from_touched=float((err[touched] ** 2).sum() / (err ** 2).sum()))
+                      share_sq_err_from_touched=float((err[touched] ** 2).sum() / (err ** 2).sum()),
+                      n_convergence_warnings=int(n_nonconv))
 S['imputed_targets'] = tgt
 
 # ------------------------------------------------------------------ feature selection (Topic 3)
